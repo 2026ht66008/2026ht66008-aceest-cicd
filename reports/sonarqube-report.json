@@ -1,0 +1,336 @@
+{
+  "quality_gate": {
+    "projectStatus": {
+      "status": "OK",
+      "conditions": [
+        {
+          "status": "OK",
+          "metricKey": "new_violations",
+          "comparator": "GT",
+          "errorThreshold": "0",
+          "actualValue": "0"
+        }
+      ],
+      "ignoredConditions": false,
+      "period": {
+        "mode": "PREVIOUS_VERSION",
+        "date": "2026-11-23T15:06:04+0000"
+      },
+      "caycStatus": "compliant"
+    }
+  },
+  "measures": {
+    "component": {
+      "key": "aceest-fitness",
+      "name": "ACEest Fitness and Gym",
+      "qualifier": "TRK",
+      "measures": [
+        {
+          "metric": "coverage",
+          "value": "100.0",
+          "bestValue": true
+        },
+        {
+          "metric": "bugs",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "reliability_rating",
+          "value": "3.0",
+          "bestValue": false
+        },
+        {
+          "metric": "code_smells",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "duplicated_lines_density",
+          "value": "0.0",
+          "bestValue": true
+        },
+        {
+          "metric": "security_rating",
+          "value": "4.0",
+          "bestValue": false
+        },
+        {
+          "metric": "ncloc",
+          "value": "706"
+        },
+        {
+          "metric": "vulnerabilities",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "security_hotspots",
+          "value": "0",
+          "bestValue": true
+        },
+        {
+          "metric": "sqale_rating",
+          "value": "1.0",
+          "bestValue": true
+        }
+      ]
+    }
+  },
+  "issues": {
+    "total": 4,
+    "p": 1,
+    "ps": 200,
+    "paging": {
+      "pageIndex": 1,
+      "pageSize": 200,
+      "total": 4
+    },
+    "effortTotal": 35,
+    "issues": [
+      {
+        "key": "7a1f6c53-87d7-4e43-8d73-8c386c4eeb38",
+        "rule": "python:S5863",
+        "severity": "MAJOR",
+        "component": "aceest-fitness:tests/test_aceest_fitness.py",
+        "project": "aceest-fitness",
+        "line": 152,
+        "hash": "749b42ab12d5e1ee2a4b1c81b31bb014",
+        "textRange": {
+          "startLine": 152,
+          "endLine": 152,
+          "startOffset": 8,
+          "endOffset": 55
+        },
+        "flows": [
+          {
+            "locations": [
+              {
+                "component": "aceest-fitness:tests/test_aceest_fitness.py",
+                "textRange": {
+                  "startLine": 151,
+                  "endLine": 151,
+                  "startOffset": 11,
+                  "endOffset": 58
+                },
+                "msg": "This is the same expression as the expected argument.",
+                "msgFormattings": []
+              }
+            ]
+          }
+        ],
+        "status": "OPEN",
+        "message": "Replace this assertion to not have the same actual and expected expression.",
+        "effort": "5min",
+        "debt": "5min",
+        "author": "2026ht66008@wilp.bits-pilani.ac.in",
+        "tags": [
+          "tests"
+        ],
+        "creationDate": "2026-11-23T12:58:49+0000",
+        "updateDate": "2026-11-23T15:06:04+0000",
+        "type": "BUG",
+        "scope": "TEST",
+        "quickFixAvailable": false,
+        "messageFormattings": [],
+        "codeVariants": [],
+        "cleanCodeAttribute": "LOGICAL",
+        "cleanCodeAttributeCategory": "INTENTIONAL",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          }
+        ],
+        "issueStatus": "OPEN",
+        "prioritizedRule": false,
+        "fromSonarQubeUpdate": false,
+        "internalTags": [],
+        "linkedTicketStatus": "NOT_LINKED"
+      },
+      {
+        "key": "4a61a805-b99b-4f0b-88f3-ded1018c9a44",
+        "rule": "Web:S9379",
+        "severity": "MAJOR",
+        "component": "aceest-fitness:templates/login.html",
+        "project": "aceest-fitness",
+        "line": 11,
+        "hash": "1677ee5e6188ad9d915d019b78b843b6",
+        "textRange": {
+          "startLine": 11,
+          "endLine": 11,
+          "startOffset": 6,
+          "endOffset": 112
+        },
+        "flows": [],
+        "status": "OPEN",
+        "message": "Remove this \"autofocus\" attribute, as it can reduce usability and accessibility for users.",
+        "effort": "5min",
+        "debt": "5min",
+        "author": "2026ht66008@wilp.bits-pilani.ac.in",
+        "tags": [
+          "accessibility"
+        ],
+        "creationDate": "2026-11-23T12:58:03+0000",
+        "updateDate": "2026-11-23T15:06:04+0000",
+        "type": "CODE_SMELL",
+        "scope": "MAIN",
+        "quickFixAvailable": false,
+        "messageFormattings": [],
+        "codeVariants": [],
+        "cleanCodeAttribute": "CONVENTIONAL",
+        "cleanCodeAttributeCategory": "CONSISTENT",
+        "impacts": [
+          {
+            "softwareQuality": "RELIABILITY",
+            "severity": "MEDIUM"
+          },
+          {
+            "softwareQuality": "MAINTAINABILITY",
+            "severity": "LOW"
+          }
+        ],
+        "issueStatus": "OPEN",
+        "prioritizedRule": false,
+        "fromSonarQubeUpdate": false,
+        "internalTags": [],
+        "linkedTicketStatus": "NOT_LINKED"
+      },
+      {
+        "key": "179fc01f-7ed6-458f-b5e8-ae51922a6279",
+        "rule": "docker:S6470",
+        "severity": "CRITICAL",
+        "component": "aceest-fitness:Dockerfile",
+        "project": "aceest-fitness",
+        "line": 16,
+        "hash": "122cc0726218d54a3abd9f5829b89784",
+        "textRange": {
+          "startLine": 16,
+          "endLine": 16,
+          "startOffset": 5,
+          "endOffset": 6
+        },
+        "flows": [],
+        "status": "OPEN",
+        "message": "Copying recursively might inadvertently add sensitive data to the container. Make sure it is safe here.",
+        "effort": "20min",
+        "debt": "20min",
+        "author": "2026ht66008@wilp.bits-pilani.ac.in",
+        "tags": [
+          "cwe",
+          "dockerfile",
+          "former-hotspot"
+        ],
+        "creationDate": "2026-11-23T12:39:13+0000",
+        "updateDate": "2026-11-23T15:06:04+0000",
+        "type": "VULNERABILITY",
+        "scope": "MAIN",
+        "quickFixAvailable": false,
+        "messageFormattings": [],
+        "codeVariants": [],
+        "cleanCodeAttribute": "COMPLETE",
+        "cleanCodeAttributeCategory": "INTENTIONAL",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ],
+        "issueStatus": "OPEN",
+        "prioritizedRule": false,
+        "fromSonarQubeUpdate": false,
+        "internalTags": [],
+        "linkedTicketStatus": "NOT_LINKED"
+      },
+      {
+        "key": "f02834c1-246f-45b6-93c2-1ee272c010fc",
+        "rule": "python:S4502",
+        "severity": "CRITICAL",
+        "component": "aceest-fitness:ACEest_Fitness.py",
+        "project": "aceest-fitness",
+        "line": 308,
+        "hash": "179643042db29a9995dc460d16749c31",
+        "textRange": {
+          "startLine": 308,
+          "endLine": 308,
+          "startOffset": 10,
+          "endOffset": 25
+        },
+        "flows": [],
+        "status": "OPEN",
+        "message": "Make sure disabling CSRF protection is safe here.",
+        "effort": "5min",
+        "debt": "5min",
+        "author": "2026ht66008@wilp.bits-pilani.ac.in",
+        "tags": [
+          "cwe",
+          "django",
+          "flask",
+          "former-hotspot"
+        ],
+        "creationDate": "2026-11-23T12:32:16+0000",
+        "updateDate": "2026-11-23T15:06:04+0000",
+        "type": "VULNERABILITY",
+        "scope": "MAIN",
+        "quickFixAvailable": false,
+        "messageFormattings": [],
+        "codeVariants": [],
+        "cleanCodeAttribute": "CONVENTIONAL",
+        "cleanCodeAttributeCategory": "CONSISTENT",
+        "impacts": [
+          {
+            "softwareQuality": "SECURITY",
+            "severity": "HIGH"
+          }
+        ],
+        "issueStatus": "OPEN",
+        "prioritizedRule": false,
+        "fromSonarQubeUpdate": false,
+        "internalTags": [],
+        "linkedTicketStatus": "NOT_LINKED"
+      }
+    ],
+    "components": [
+      {
+        "key": "aceest-fitness:Dockerfile",
+        "enabled": true,
+        "qualifier": "FIL",
+        "name": "Dockerfile",
+        "longName": "Dockerfile",
+        "path": "Dockerfile"
+      },
+      {
+        "key": "aceest-fitness:ACEest_Fitness.py",
+        "enabled": true,
+        "qualifier": "FIL",
+        "name": "ACEest_Fitness.py",
+        "longName": "ACEest_Fitness.py",
+        "path": "ACEest_Fitness.py"
+      },
+      {
+        "key": "aceest-fitness:templates/login.html",
+        "enabled": true,
+        "qualifier": "FIL",
+        "name": "login.html",
+        "longName": "templates/login.html",
+        "path": "templates/login.html"
+      },
+      {
+        "key": "aceest-fitness",
+        "enabled": true,
+        "qualifier": "TRK",
+        "name": "ACEest Fitness and Gym",
+        "longName": "ACEest Fitness and Gym"
+      },
+      {
+        "key": "aceest-fitness:tests/test_aceest_fitness.py",
+        "enabled": true,
+        "qualifier": "UTS",
+        "name": "test_aceest_fitness.py",
+        "longName": "tests/test_aceest_fitness.py",
+        "path": "tests/test_aceest_fitness.py"
+      }
+    ],
+    "facets": []
+  }
+}
