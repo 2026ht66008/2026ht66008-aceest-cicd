@@ -1,0 +1,140 @@
+# Blue-green: two full copies of the app, blue and green. Only one gets user traffic.
+#   live:    http://<vm-ip>:30082  (Service aceest-bg-live)
+#   preview: http://<vm-ip>:30086  (Service aceest-bg-preview, always the idle colour)
+# A release goes to the idle colour, is checked on the preview port, then the live
+# Service is switched to it. Rollback = switch the Service back; the old colour is still running.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-blue
+  namespace: aceest
+  labels:
+    app: aceest-bg
+    slot: blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-bg
+      slot: blue
+  template:
+    metadata:
+      labels:
+        app: aceest-bg
+        slot: blue
+    spec:
+      imagePullSecrets:
+        - name: dockerhub
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: 2026ht66008/aceest-fitness:v3.1.2
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: aceest-app
+                optional: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-green
+  namespace: aceest
+  labels:
+    app: aceest-bg
+    slot: green
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-bg
+      slot: green
+  template:
+    metadata:
+      labels:
+        app: aceest-bg
+        slot: green
+    spec:
+      imagePullSecrets:
+        - name: dockerhub
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: 2026ht66008/aceest-fitness:v3.2.4
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: aceest-app
+                optional: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+---
+# Users -> whichever colour the selector points at
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-bg-live
+  namespace: aceest
+spec:
+  type: NodePort
+  selector:
+    app: aceest-bg
+    slot: blue
+  ports:
+    - port: 80
+      targetPort: 5000
+      nodePort: 30082
+---
+# The idle colour, for checking a release before the switch
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-bg-preview
+  namespace: aceest
+spec:
+  type: NodePort
+  selector:
+    app: aceest-bg
+    slot: green
+  ports:
+    - port: 80
+      targetPort: 5000
+      nodePort: 30086
