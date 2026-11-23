@@ -1,0 +1,12 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.scannerwork/
+.coverage
+coverage.xml
+test-results.xml
+*.db
+build/
+dist/
