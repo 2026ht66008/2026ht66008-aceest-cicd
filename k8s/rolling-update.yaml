@@ -1,0 +1,72 @@
+# Rolling update: pods are replaced one at a time, so the app never goes down.
+#   http://<vm-ip>:30081
+# Jenkins changes the image with `kubectl set image`; `kubectl rollout undo` goes back.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-rolling
+  namespace: aceest
+  labels:
+    app: aceest-rolling
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10      # keep old versions for `kubectl rollout undo`
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1               # start one new pod at a time
+      maxUnavailable: 0         # never drop below 2 ready pods
+  selector:
+    matchLabels:
+      app: aceest-rolling
+  template:
+    metadata:
+      labels:
+        app: aceest-rolling
+    spec:
+      imagePullSecrets:
+        - name: dockerhub
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: 2026ht66008/aceest-fitness:latest
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: aceest-app
+                optional: true
+          readinessProbe:           # only send traffic to pods that answer /health
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:            # restart a pod that stops answering
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-rolling
+  namespace: aceest
+spec:
+  type: NodePort
+  selector:
+    app: aceest-rolling
+  ports:
+    - port: 80
+      targetPort: 5000
+      nodePort: 30081

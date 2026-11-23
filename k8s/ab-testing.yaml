@@ -1,0 +1,245 @@
+# A/B testing: each user is put in group A or B and keeps seeing the same version.
+#   http://<vm-ip>:30084
+# Group A gets the current version, group B the new one. The response header X-AB-Group
+# says which group answered. Testers can force a group with the header "X-AB-Group: B"
+# or the cookie "ab_group=b". Ending the test = scale aceest-ab-b to 0 (everyone gets A).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-ab-a
+  namespace: aceest
+  labels:
+    app: aceest-ab
+    group: a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-ab
+      group: a
+  template:
+    metadata:
+      labels:
+        app: aceest-ab
+        group: a
+    spec:
+      imagePullSecrets:
+        - name: dockerhub
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: 2026ht66008/aceest-fitness:v3.1.2
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: aceest-app
+                optional: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-ab-b
+  namespace: aceest
+  labels:
+    app: aceest-ab
+    group: b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-ab
+      group: b
+  template:
+    metadata:
+      labels:
+        app: aceest-ab
+        group: b
+    spec:
+      imagePullSecrets:
+        - name: dockerhub
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: 2026ht66008/aceest-fitness:v3.2.4
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: aceest-app
+                optional: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-ab-a
+  namespace: aceest
+spec:
+  selector:
+    app: aceest-ab
+    group: a
+  ports:
+    - port: 80
+      targetPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-ab-b
+  namespace: aceest
+spec:
+  selector:
+    app: aceest-ab
+    group: b
+  ports:
+    - port: 80
+      targetPort: 5000
+---
+# Router: users -> http://<vm-ip>:30084
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aceest-ab-router
+  namespace: aceest
+data:
+  default.conf: |
+    upstream ab_a {
+        server aceest-ab-a.aceest.svc.cluster.local:80;
+    }
+    upstream ab_b {
+        server aceest-ab-b.aceest.svc.cluster.local:80 max_fails=1 fail_timeout=10s;
+        server aceest-ab-a.aceest.svc.cluster.local:80 backup;   # if B is switched off, its users get A
+    }
+
+    # Testers can choose a group with a header (X-AB-Group: B) or a cookie (ab_group=b)
+    map $http_x_ab_group $ab_from_header {
+        default "";
+        "~*^a$" a;
+        "~*^b$" b;
+    }
+    map $cookie_ab_group $ab_from_cookie {
+        default "";
+        "~*^a$" a;
+        "~*^b$" b;
+    }
+
+    # Everyone else is split 50/50 by client address + browser, so a user keeps their group
+    split_clients "${remote_addr}${http_user_agent}" $ab_random {
+        50% a;
+        *   b;
+    }
+
+    # Header wins, then cookie, then the random split
+    map $ab_from_header $ab_choice {
+        ""      $ab_from_cookie;
+        default $ab_from_header;
+    }
+    map $ab_choice $ab_group {
+        ""      $ab_random;
+        default $ab_choice;
+    }
+
+    server {
+        listen 80;
+        location / {
+            proxy_pass http://ab_$ab_group;
+            proxy_next_upstream error timeout http_502 http_503;
+            proxy_set_header Host $host;
+            add_header X-AB-Group $ab_group always;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-ab-router
+  namespace: aceest
+  labels:
+    app: aceest-ab-router
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-ab-router
+  template:
+    metadata:
+      labels:
+        app: aceest-ab-router
+    spec:
+      imagePullSecrets:
+        - name: dockerhub
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+          readinessProbe:
+            tcpSocket:
+              port: 80
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: config
+          configMap:
+            name: aceest-ab-router
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-ab-router
+  namespace: aceest
+spec:
+  type: NodePort
+  selector:
+    app: aceest-ab-router
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30084

@@ -1,0 +1,227 @@
+# Shadow: users get answers from the live version only. NGINX sends a copy of every
+# request to the new version, so it is tried with real traffic without anyone seeing it.
+#   http://<vm-ip>:30085
+# The copies show up in the new version's log:  kubectl -n aceest logs deploy/aceest-shadow-new
+# Stopping the shadow = scale aceest-shadow-new to 0 (users are not affected).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-shadow-live
+  namespace: aceest
+  labels:
+    app: aceest-shadow
+    role: live
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-shadow
+      role: live
+  template:
+    metadata:
+      labels:
+        app: aceest-shadow
+        role: live
+    spec:
+      imagePullSecrets:
+        - name: dockerhub
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: 2026ht66008/aceest-fitness:v3.1.2
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: aceest-app
+                optional: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-shadow-new
+  namespace: aceest
+  labels:
+    app: aceest-shadow
+    role: new
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-shadow
+      role: new
+  template:
+    metadata:
+      labels:
+        app: aceest-shadow
+        role: new
+    spec:
+      imagePullSecrets:
+        - name: dockerhub
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: app
+          image: 2026ht66008/aceest-fitness:v3.2.4
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: aceest-app
+                optional: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-shadow-live
+  namespace: aceest
+spec:
+  selector:
+    app: aceest-shadow
+    role: live
+  ports:
+    - port: 80
+      targetPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-shadow-new
+  namespace: aceest
+spec:
+  selector:
+    app: aceest-shadow
+    role: new
+  ports:
+    - port: 80
+      targetPort: 5000
+---
+# Router: users -> http://<vm-ip>:30085
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aceest-shadow-router
+  namespace: aceest
+data:
+  default.conf: |
+    upstream shadow_live {
+        server aceest-shadow-live.aceest.svc.cluster.local:80;
+    }
+    upstream shadow_new {
+        server aceest-shadow-new.aceest.svc.cluster.local:80;
+    }
+
+    server {
+        listen 80;
+
+        location / {
+            mirror /__shadow;            # send a copy of every request to the new version
+            mirror_request_body on;
+            proxy_pass http://shadow_live;   # users only ever get the live answer
+            proxy_set_header Host $host;
+            add_header X-Shadow-Copy "sent to new version" always;
+        }
+
+        # The copy: its answer is thrown away, and errors here never reach the user
+        location = /__shadow {
+            internal;
+            proxy_pass http://shadow_new$request_uri;
+            proxy_set_header Host $host;
+            proxy_connect_timeout 1s;
+            proxy_read_timeout 3s;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-shadow-router
+  namespace: aceest
+  labels:
+    app: aceest-shadow-router
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-shadow-router
+  template:
+    metadata:
+      labels:
+        app: aceest-shadow-router
+    spec:
+      imagePullSecrets:
+        - name: dockerhub
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+          readinessProbe:
+            tcpSocket:
+              port: 80
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: config
+          configMap:
+            name: aceest-shadow-router
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-shadow-router
+  namespace: aceest
+spec:
+  type: NodePort
+  selector:
+    app: aceest-shadow-router
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30085

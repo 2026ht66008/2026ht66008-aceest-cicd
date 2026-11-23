@@ -1,0 +1,5 @@
+# Everything for ACEest lives in its own namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aceest
