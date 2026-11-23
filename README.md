@@ -18,15 +18,15 @@ Links:
 
 - GitHub repo: https://github.com/2026ht66008/2026ht66008-aceest-cicd
 - Docker Hub images: https://hub.docker.com/r/2026ht66008/aceest-fitness/tags
-- Rolling update: http://<vm-ip>:30081
-- Blue-green (live): http://<vm-ip>:30082
-- Blue-green (idle/preview): http://<vm-ip>:30086
-- Canary: http://<vm-ip>:30083
-- A/B testing: http://<vm-ip>:30084
-- Shadow: http://<vm-ip>:30085
-- Jenkins: http://<vm-ip>:8080 (job ACEest-Fitness), SonarQube: http://<vm-ip>:9000
+- Rolling update: http://10.3.17.60:30081
+- Blue-green (live): http://10.3.17.60:30082
+- Blue-green (idle/preview): http://10.3.17.60:30086
+- Canary: http://10.3.17.60:30083
+- A/B testing: http://10.3.17.60:30084
+- Shadow: http://10.3.17.60:30085
+- Jenkins: http://10.3.17.60:8080 (job ACEest-Fitness), SonarQube: http://10.3.17.60:9000
 
-The <vm-ip> links only open inside the Prayogshala network. The Prayogshala VM is reset between sessions, so the cluster runs during lab sessions only.
+The 10.3.17.60 links only open inside the Prayogshala network. The Prayogshala VM is reset between sessions, so the cluster runs during lab sessions only.
 
 ## Versions
 
@@ -117,7 +117,7 @@ The VM is reset between sessions, so each session starts with:
 
 ```bash
 git clone https://github.com/2026ht66008/2026ht66008-aceest-cicd
-cd <repo>
+cd 2026ht66008-aceest-cicd
 sudo bash scripts/setup-prayogshala.sh
 ```
 
